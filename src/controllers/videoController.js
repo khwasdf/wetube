@@ -73,7 +73,7 @@ export const postUpload = async (req, res) => {
       title,
       description,
       fileUrl: video[0].path,
-      thumbUrl: thumb[0].path,
+      thumbUrl: Video.changePathFormula(thumb[0].path),
       owner: _id,
       hashtags: Video.formatHashtags(hashtags),
     });
@@ -147,5 +147,26 @@ export const createComment = async (req, res) => {
   });
   video.comments.push(comment._id);
   video.save();
+  // 백엔드에서 json 형태로 프론트로 정보보내기
   return res.status(201).json({ newCommentId: comment._id });
 };
+
+export const deleteComment = async (req,res) => {
+    const {id} = req.params
+    const {_id} = req.session.user
+    console.log(id)
+    const comment = await Comment.findById(id)
+    const video = await Video.findById(comment.video);
+    if (!comment) {
+      console.log("error")
+      return res.status(404).render("404", { pageTitle: "Comment not found." });
+    }
+    if (String(comment.owner) !== String(_id)) {
+      console.log("error")
+      return res.status(403).redirect("/");
+    }
+    await Comment.findByIdAndDelete(id);
+    await video.comments.splice(video.comments.indexOf(id, 1));
+    await video.save();
+    return res.sendStatus(200);
+}

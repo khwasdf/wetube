@@ -1,7 +1,16 @@
+const removeBtn = document.querySelectorAll(".remove-btn")
 const videoContainer = document.getElementById("videoContainer");
 const form = document.getElementById("commentForm");
 
-const addComment = (text, id) => {
+async function handleCommentRemove(event) {
+    const li = event.target.parentElement;
+    const commentId = li.dataset.id
+    li.remove();
+    await fetch(`/api/videos/${commentId}/delete`, {
+      method: "DELETE",
+    });
+}
+const addComment = async  (text, id) => {
   const videoComments = document.querySelector(".video__comments ul");
   const newComment = document.createElement("li");
   newComment.dataset.id = id;
@@ -10,11 +19,13 @@ const addComment = (text, id) => {
   icon.className = "fas fa-comment";
   const span = document.createElement("span");
   span.innerText = ` ${text}`;
-  const span2 = document.createElement("span");
-  span2.innerText = "❌";
+  const button = document.createElement("button");
+  button.innerText = "❌";
+  button.className = "remove-btn"
   newComment.appendChild(icon);
   newComment.appendChild(span);
-  newComment.appendChild(span2);
+  newComment.appendChild(button);
+  button.addEventListener("click", handleCommentRemove)
   videoComments.prepend(newComment);
 };
 
@@ -26,6 +37,7 @@ const handleSubmit = async (event) => {
   if (text === "") {
     return;
   }
+  // fetch는 response 반환
   const response = await fetch(`/api/videos/${videoId}/comment`, {
     method: "POST",
     headers: {
@@ -35,6 +47,7 @@ const handleSubmit = async (event) => {
   });
   if (response.status === 201) {
     textarea.value = "";
+    // 백엔드에서 보낸 json 정보 받기
     const { newCommentId } = await response.json();
     addComment(text, newCommentId);
   }
@@ -42,4 +55,8 @@ const handleSubmit = async (event) => {
 
 if (form) {
   form.addEventListener("submit", handleSubmit);
+}
+
+if(removeBtn) {
+  removeBtn.forEach(function(button) {button.addEventListener("click", handleCommentRemove)})
 }
